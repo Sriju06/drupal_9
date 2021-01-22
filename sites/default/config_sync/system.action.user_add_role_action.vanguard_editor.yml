@@ -1,0 +1,14 @@
+uuid: 1dc11929-7ad6-4a4f-8a71-fc6ccdc2d582
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.vanguard_editor
+  module:
+    - user
+id: user_add_role_action.vanguard_editor
+label: 'Add the Vanguard Editor role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: vanguard_editor

@@ -1,0 +1,14 @@
+uuid: 0fdb83bd-2421-4c10-ab93-b44291ef9e46
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.vanguard_editor
+  module:
+    - user
+id: user_remove_role_action.vanguard_editor
+label: 'Remove the Vanguard Editor role from the selected user(s)'
+type: user
+plugin: user_remove_role_action
+configuration:
+  rid: vanguard_editor

@@ -1,0 +1,25 @@
+uuid: 4063f33d-9c9a-48c9-9ad4-fcd65668e924
+langcode: en
+status: true
+dependencies: {  }
+id: vanguard_editor
+label: 'Vanguard Editor'
+weight: 3
+is_admin: null
+permissions:
+  - 'create article content'
+  - 'create page content'
+  - 'create test content'
+  - 'delete any article content'
+  - 'delete any page content'
+  - 'delete any test content'
+  - 'delete article revisions'
+  - 'delete own article content'
+  - 'delete own page content'
+  - 'delete own test content'
+  - 'delete page revisions'
+  - 'delete test revisions'
+  - 'edit any page content'
+  - 'edit own page content'
+  - 'edit own test content'
+  - 'view article revisions'
