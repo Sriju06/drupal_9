@@ -1,0 +1,16 @@
+uuid: a8ab8cec-86b7-4d4b-acb8-f146aab74fe8
+langcode: en
+status: true
+dependencies: {  }
+id: configuration_prod_split
+label: 'Configuration Prod Split'
+description: ''
+folder: sites/default/config_live
+module:
+  dblog: 0
+theme: {  }
+blacklist: {  }
+graylist: {  }
+graylist_dependents: true
+graylist_skip_equal: true
+weight: 0

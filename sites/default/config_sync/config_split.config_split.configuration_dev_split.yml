@@ -1,0 +1,16 @@
+uuid: 4d1405a9-fc27-4428-8187-680d10f38692
+langcode: en
+status: true
+dependencies: {  }
+id: configuration_dev_split
+label: 'Configuration Dev Split'
+description: ''
+folder: sites/default/config_dev
+module:
+  dblog: 0
+theme: {  }
+blacklist: {  }
+graylist: {  }
+graylist_dependents: true
+graylist_skip_equal: true
+weight: 0

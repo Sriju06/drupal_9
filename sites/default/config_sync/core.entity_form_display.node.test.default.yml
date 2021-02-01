@@ -5,6 +5,7 @@ dependencies:
   config:
     - field.field.node.test.body
     - field.field.node.test.field_date
+    - field.field.node.test.field_email
     - node.type.test
   module:
     - datetime
@@ -36,6 +37,14 @@ content:
     settings: {  }
     third_party_settings: {  }
     type: datetime_default
+    region: content
+  field_email:
+    weight: 123
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: email_default
     region: content
   path:
     type: path

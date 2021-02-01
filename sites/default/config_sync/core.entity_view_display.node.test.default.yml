@@ -5,6 +5,7 @@ dependencies:
   config:
     - field.field.node.test.body
     - field.field.node.test.field_date
+    - field.field.node.test.field_email
     - node.type.test
   module:
     - datetime
@@ -30,6 +31,13 @@ content:
       timezone_override: ''
     third_party_settings: {  }
     type: datetime_default
+    region: content
+  field_email:
+    weight: 103
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    type: basic_string
     region: content
   links:
     weight: 100
