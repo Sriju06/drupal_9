@@ -1,0 +1,5 @@
+node_auto_expire_node_type: 'node_auto_expire_'
+node_auto_expire_email: 'node_auto_expire_email_'
+node_auto_expire_days: 30
+node_auto_expire_warn: 5
+node_auto_expire_purge: 60

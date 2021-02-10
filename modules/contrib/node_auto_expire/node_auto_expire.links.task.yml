@@ -1,0 +1,4 @@
+node_auto_expire.node.expire:
+  title: 'Extend publication'
+  base_route: entity.node.canonical
+  route_name: node_auto_expire.expire

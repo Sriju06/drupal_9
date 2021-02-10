@@ -1,0 +1,14 @@
+node_auto_expire.settings:
+  type: config_object
+  label: 'Node Auto Expire Config'
+  mapping:
+    node_auto_expire_node_type:
+      type: string
+    node_auto_expire_email:
+      type: string
+    node_auto_expire_days:
+      type: integer
+    node_auto_expire_warn:
+      type: integer
+    node_auto_expire_purge:
+      type: integer

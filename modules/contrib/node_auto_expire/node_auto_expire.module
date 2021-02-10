@@ -1,0 +1,541 @@
+<?php
+
+/**
+ * @file
+ * Node Auto Expire.
+ *
+ * Automatically expires nodes after a node has been published
+ * for a certain time. The module can also send out warnings before expiry,
+ * on expiry and purge expired nodes afterwards.
+ */
+
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
+use Drupal\node\Entity\Node;
+use Drupal\node\Entity\NodeType;
+use Drupal\node\NodeTypeInterface;
+use Drupal\node_auto_expire\Form\NodeAutoExpireExpireForm;
+
+/**
+ * Implements hook_help().
+ */
+function node_auto_expire_help($route_name) {
+
+  $output = '';
+  switch ($route_name) {
+    case 'help.page.node_auto_expire':
+      $output = t('Expires nodes automatically.');
+      break;
+  }
+
+  return $output;
+
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function node_auto_expire_menu_local_tasks_alter(&$data, $route_name, CacheableMetadata &$cacheability) {
+
+  $user = Drupal::currentUser();
+
+  if ($user->isAuthenticated() && $route_name == 'entity.node.canonical') {
+    foreach ($data['tabs'] as $tabs) {
+      // Prevent Local Tasks from being cached if there is
+      // an "Extend publication" tab.
+      // Will show/hide "Extend publication" tab immediately after the
+      // switching on/off of the current content type in the
+      // Node Auto Expire settings.
+      if (isset($tabs['node_auto_expire.node.expire'])) {
+        $cacheability->setCacheMaxAge(0);
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_node_type_update().
+ */
+function node_auto_expire_node_type_update(NodeTypeInterface $info) {
+
+  $config = Drupal::config('node_auto_expire.settings');
+
+  $type_codes = [
+    '_e' => 0,
+    '_d' => $config->get('node_auto_expire_days'),
+    '_w' => $config->get('node_auto_expire_warn'),
+    '_p' => $config->get('node_auto_expire_purge'),
+    '_ex' => 0,
+  ];
+
+  if ($info->getOriginalId() != $info->id()) {
+
+    $code_old = $config->get('node_auto_expire_node_type') . $info->getOriginalId();
+    $code_new = $config->get('node_auto_expire_node_type') . $info->id();
+
+    $drupal_state = Drupal::state();
+
+    foreach ($type_codes as $code => $value) {
+      $state = $drupal_state->get($code_old . $code, $value);
+      $drupal_state->delete($code_old . $code);
+      $drupal_state->set($code_new . $code, $state);
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function node_auto_expire_cron() {
+
+  $connection = Drupal::database();
+  $config = Drupal::config('node_auto_expire.settings');
+
+  foreach (NodeType::loadMultiple() as $type => $name) {
+
+    $code = $config->get('node_auto_expire_node_type') . $type;
+    $drupal_state = Drupal::state();
+
+    if ($drupal_state->get($code . '_e', 0)) {
+
+      $days = $drupal_state->get($code . '_d', $config->get('node_auto_expire_days'));
+      $warn = $drupal_state->get($code . '_w', $config->get('node_auto_expire_warn'));
+      $purge = $drupal_state->get($code . '_p', $config->get('node_auto_expire_purge'));
+
+      // Send expiration warnings.
+      if ($warn > 0) {
+
+        $subject = $drupal_state->get($config->get('node_auto_expire_email') . 'warn_subject', '');
+        $body = $drupal_state->get($config->get('node_auto_expire_email') . 'warn_body', '');
+        $due_date = ($warn == 1) ? $warn . " day" : $warn . " days";
+
+        $query = $connection->select('node_auto_expire', 'e');
+        $query->join('node_field_data', 'n', 'n.nid = e.nid');
+        $query->fields('n', ['nid', 'title']);
+        $query->condition('n.status', 1)
+          ->condition('e.warned', 0)
+          ->condition('n.type', $type)
+          ->condition('e.expire', strtotime("now + " . $due_date), '<=');
+        $result = $query->execute();
+
+        foreach ($result as $record) {
+
+          _node_auto_expire_notify_warning($record->nid, $record->title, $type, $days, $subject, $body);
+
+          $connection->update('node_auto_expire')
+            ->fields([
+              'warned' => 1,
+            ])
+            ->condition('nid', $record->nid)
+            ->execute();
+
+          $link = Link::fromTextAndUrl(
+            t('view'),
+            Url::fromUri('internal:/node/' . $record->nid)
+          )->toString();
+          Drupal::logger('node_auto_expire')
+            ->notice('Auto expire warning for node %node, ' . $link,
+              [
+                '%node' => $record->nid,
+              ]
+            );
+
+        }
+      }
+
+      // Expire.
+      $subject = $drupal_state->get($config->get('node_auto_expire_email') . 'expired_subject', '');
+      $body = $drupal_state->get($config->get('node_auto_expire_email') . 'expired_body', '');
+
+      $query = $connection->select('node_auto_expire', 'e');
+      $query->join('node_field_data', 'n', 'n.nid = e.nid');
+      $query->fields('n', ['nid', 'title']);
+      $query->condition('n.status', 1)
+        ->condition('n.type', $type)
+        ->condition('e.expire', strtotime("now"), '<=');
+      $result = $query->execute();
+
+      foreach ($result as $record) {
+
+        $node = Node::load($record->nid);
+        $node->setPublished(FALSE);
+        $node->save();
+
+        _node_auto_expire_notify_expired($record->nid, $record->title, $type, $days, $subject, $body);
+
+        $link = Link::fromTextAndUrl(
+          t('view'),
+          Url::fromUri('internal:/node/' . $record->nid)
+        )->toString();
+        Drupal::logger('node_auto_expire')
+          ->notice('Unpublishing node %node, ' . $link,
+            [
+              '%node' => $record->nid,
+            ]
+          );
+
+      }
+
+      // Purge.
+      if ($purge > 0) {
+
+        $due_date = ($purge == 1) ? $purge . " day" : $purge . " days";
+        $query = $connection->select('node_auto_expire', 'e');
+        $query->join('node_field_data', 'n', 'n.nid = e.nid');
+        $query->fields('e', ['nid']);
+        $query->condition('n.status', 0)
+          ->condition('n.type', $type)
+          ->condition('e.expire', strtotime("now - " . $due_date), '<=');
+        $result = $query->execute();
+
+        $count_purged = 0;
+        $nids = [];
+
+        foreach ($result as $record) {
+
+          $nids[] = $record->nid;
+          $count_purged++;
+
+        }
+
+        if ($count_purged > 0) {
+
+          $storage_handler = Drupal::entityTypeManager()->getStorage('node');
+          $entities = $storage_handler->loadMultiple($nids);
+          $storage_handler->delete($entities);
+
+          Drupal::logger('node_auto_expire')
+            ->notice("Auto expire purged %num_purged node(s).",
+              [
+                '%num_purged' => $count_purged,
+              ]
+            );
+
+        }
+
+      }
+    }
+
+  }
+
+}
+
+/**
+ * Set up "warning" notification for the expiry.
+ *
+ * @param int $nid
+ *   Comment about this variable.
+ * @param string $title
+ *   Comment about this variable.
+ * @param string $type
+ *   Comment about this variable.
+ * @param int $days
+ *   Comment about this variable.
+ * @param string $subject
+ *   Comment about this variable.
+ * @param string $body
+ *   Comment about this variable.
+ */
+function _node_auto_expire_notify_warning($nid, $title, $type, $days, $subject, $body) {
+
+  $args = $args = _node_auto_expire_notify_array($nid, $title, $type, $days);
+  $args['@daysleft'] = Drupal::service('date.formatter')
+    ->formatInterval(NodeAutoExpireExpireForm::nodeAutoExpireGetExpire($nid) - Drupal::time()
+      ->getRequestTime());
+
+  _node_auto_expire_notify($nid, 'node_auto_expire_warning', $subject, $body, $args);
+
+}
+
+/**
+ * Set up "expired" notification for the expiry.
+ *
+ * @param int $nid
+ *   Comment about this variable.
+ * @param string $title
+ *   Comment about this variable.
+ * @param string $type
+ *   Comment about this variable.
+ * @param int $days
+ *   Comment about this variable.
+ * @param string $subject
+ *   Comment about this variable.
+ * @param string $body
+ *   Comment about this variable.
+ */
+function _node_auto_expire_notify_expired($nid, $title, $type, $days, $subject, $body) {
+
+  $args = _node_auto_expire_notify_array($nid, $title, $type, $days);
+
+  _node_auto_expire_notify($nid, 'node_auto_expire_expired', $subject, $body, $args);
+
+}
+
+/**
+ * Helper function to prepare parameters for the notification text fields.
+ *
+ * @param int $nid
+ *   Comment about this variable.
+ * @param string $title
+ *   Comment about this variable.
+ * @param string $type
+ *   Comment about this variable.
+ * @param int $days
+ *   Comment about this variable.
+ *
+ * @return array
+ *   Comment about this variable.
+ */
+function _node_auto_expire_notify_array($nid, $title, $type, $days) {
+
+  $args = [
+    '@type' => $type,
+    '@title' => $title,
+    '@url' => Url::fromUri('internal:' . '/node/' . $nid, ['absolute' => TRUE])
+      ->toString(),
+    '@days' => $days,
+    '@date' => Drupal::service('date.formatter')
+      ->format(NodeAutoExpireExpireForm::nodeAutoExpireGetExpire($nid)),
+    '@site' => Drupal::config('system.site')->get('name'),
+    '@siteurl' => Url::fromUri('internal:/' . '<front>', ['absolute' => TRUE])
+      ->toString(),
+  ];
+
+  return $args;
+
+}
+
+/**
+ * Send notifications.
+ *
+ * @param int $nid
+ *   Comment about this variable.
+ * @param string $mailkey
+ *   Comment about this variable.
+ * @param string $subject
+ *   Comment about this variable.
+ * @param string $body
+ *   Comment about this variable.
+ * @param array $args
+ *   Comment about this variable.
+ */
+function _node_auto_expire_notify($nid, $mailkey, $subject, $body, array $args) {
+
+  if (!empty($subject)) {
+
+    $connection = Drupal::database();
+
+    $select = $connection->select('users_field_data', 'u')
+      ->fields('u', ['mail']);
+    $select->join('node_field_data', 'n', 'n.uid = u.uid');
+    $select->condition('n.nid', $nid)
+      ->condition('u.status', 1)
+      ->condition('u.uid', 0, '>');
+    $result = $select->execute()->fetchField();
+
+    if ($result) {
+
+      $user_email = $result;
+      $subject = t($subject, $args);
+      $body = t($body, $args);
+      $params = [
+        'subject' => $subject,
+        'body' => $body,
+      ];
+      $bcc = trim(Drupal::state()
+        ->get(Drupal::config('node_auto_expire.settings')
+          ->get('node_auto_expire_email') . 'bcc', ''));
+
+      if ($bcc == '') {
+        $sent = Drupal::service('plugin.manager.mail')
+          ->mail('node_auto_expire', $mailkey, $user_email, Drupal::service('language.default')
+            ->get(), $params);
+      }
+      else {
+        $params['bcc'] = $bcc;
+        $sent = Drupal::service('plugin.manager.mail')
+          ->mail('node_auto_expire', $mailkey . '_bcc', $user_email, Drupal::service('language.default')
+            ->get(), $params);
+      }
+
+      if (!$sent) {
+        Drupal::logger('node_auto_expire')
+          ->error('Could not send notification email to: %user_email',
+            [
+              '%user_email' => $user_email,
+            ]
+          );
+      }
+
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_entity_insert().
+ *
+ * @throws \Exception
+ */
+function node_auto_expire_node_insert(Node $node) {
+
+  _node_auto_expire_node_operations($node, $node->getCreatedTime());
+
+}
+
+/**
+ * Implements hook_entity_update().
+ *
+ * @throws \Exception
+ */
+function node_auto_expire_node_update(Node $node) {
+
+  $config = Drupal::config('node_auto_expire.settings');
+
+  // Allow/Deny extend of the auto expire after node updates.
+  if (Drupal::state()
+    ->get($config->get('node_auto_expire_node_type') . $node->getType() . '_ex') == 1) {
+    _node_auto_expire_node_operations($node, $node->getChangedTime());
+  }
+
+}
+
+/**
+ * Helper function implements expire node operations.
+ *
+ * @param \Drupal\node\Entity\Node $node
+ *   Comment about this variable.
+ * @param string $operation
+ *   Comment about this variable.
+ *
+ * @throws \Exception
+ */
+function _node_auto_expire_node_operations(Node $node, $operation) {
+
+  if ($node->isPublished()) {
+    $days = _node_auto_expire_get_expdays($node);
+    if ($days != -1) {
+      _node_auto_expire_update_date($node, $operation, $days);
+    }
+  }
+
+}
+
+/**
+ * The number of days until expiration.
+ *
+ * @param \Drupal\node\Entity\Node $node
+ *   Comment about this variable.
+ *
+ * @return int
+ *   Comment about this variable.
+ */
+function _node_auto_expire_get_expdays(Node $node) {
+
+  $code = Drupal::config('node_auto_expire.settings')
+    ->get('node_auto_expire_node_type') . $node->getType();
+  $drupal_state = Drupal::state();
+
+  if ($drupal_state->get($code . '_e', 0)) {
+    return $drupal_state->get($code . '_d', 0);
+  }
+  else {
+    return -1;
+  }
+
+}
+
+/**
+ * Helper function creates expiration in datestamp format.
+ *
+ * @param \Drupal\node\Entity\Node $node
+ *   Comment about this variable.
+ * @param int $nowtime
+ *   Comment about this variable.
+ * @param int $days
+ *   Comment about this variable.
+ *
+ * @throws \Exception
+ */
+function _node_auto_expire_update_date(Node $node, $nowtime, $days) {
+
+  $connection = Drupal::database();
+
+  // Merge updates because nid is primary key.
+  $connection->merge('node_auto_expire')
+    ->keys(['nid' => $node->id()])
+    ->fields([
+      'nid' => $node->id(),
+      'expire' => $nowtime + $days * 24 * 60 * 60,
+    ])
+    ->execute();
+
+  Drupal::messenger()->addMessage(
+    t('This %type will auto expire in %days days.',
+      [
+        '%type' => $node->getType(),
+        '%days' => $days,
+      ]
+    )
+  );
+
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function node_auto_expire_node_delete(Node $node) {
+
+  $connection = Drupal::database();
+  $config = Drupal::config('node_auto_expire.settings');
+  $code = $config->get('node_auto_expire_node_type') . $node->getType();
+
+  if (Drupal::state()->get($code . '_e', 0)) {
+    $connection->delete('node_auto_expire')
+      ->condition('nid', $node->id())
+      ->execute();
+  }
+
+}
+
+/**
+ * Implements hook_node_type_delete().
+ */
+function node_auto_expire_node_type_delete(NodeTypeInterface $info) {
+
+  $drupal_state = Drupal::state();
+  $code = Drupal::config('node_auto_expire.settings')
+    ->get('node_auto_expire_node_type') . $info->getEntityTypeId();
+
+  $type_codes = ['_e', '_d', '_w', '_p', '_ex'];
+
+  foreach ($type_codes as $type_code) {
+    $drupal_state->delete($code . $type_code);
+  }
+
+}
+
+/**
+ * Implements hook_mail().
+ */
+function node_auto_expire_mail($key, &$message, $params) {
+
+  if ($key == 'node_auto_expire_warning_bcc' || $key == 'node_auto_expire_expired_bcc') {
+    $message['headers']['bcc'] = $params['bcc'];
+  }
+
+  if ($key == 'node_auto_expire_warning' || $key == 'node_auto_expire_expired' || $key == 'node_auto_expire_warning_bcc' || $key == 'node_auto_expire_expired_bcc') {
+    $message['subject'] = $params['subject'];
+    $message['body'][] = $params['body'];
+  }
+
+}
