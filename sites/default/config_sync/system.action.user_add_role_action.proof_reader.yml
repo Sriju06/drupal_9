@@ -1,0 +1,14 @@
+uuid: 21b5e680-d0e1-470c-981e-b790e92895b6
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.proof_reader
+  module:
+    - user
+id: user_add_role_action.proof_reader
+label: 'Add the Proof Reader role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: proof_reader

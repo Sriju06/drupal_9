@@ -1,0 +1,14 @@
+uuid: 3f19f25f-b3cd-471c-9985-ec025cb2b8ba
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.content_auditor
+  module:
+    - user
+id: user_remove_role_action.content_auditor
+label: 'Remove the Content Auditor role from the selected user(s)'
+type: user
+plugin: user_remove_role_action
+configuration:
+  rid: content_auditor

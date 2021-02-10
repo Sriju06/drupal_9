@@ -1,0 +1,14 @@
+uuid: e7ef3efe-2f24-468d-8640-04d1e9e3811e
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.content_auditor
+  module:
+    - user
+id: user_add_role_action.content_auditor
+label: 'Add the Content Auditor role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: content_auditor

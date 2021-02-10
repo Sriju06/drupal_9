@@ -1,0 +1,19 @@
+uuid: 3df9d102-ae4d-4d6e-b142-6466bc436f9f
+langcode: en
+status: true
+dependencies: {  }
+id: content_creator
+label: 'Content Creator'
+weight: 5
+is_admin: null
+permissions:
+  - 'access content overview'
+  - 'create test content'
+  - 'delete own test content'
+  - 'edit own comments'
+  - 'edit own test content'
+  - 'use editorial transition create_new_draft'
+  - 'use editorial transition submit_draft'
+  - 'view latest version'
+  - 'view own unpublished content'
+  - 'view test revisions'

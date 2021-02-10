@@ -1,0 +1,14 @@
+uuid: 77cb11f2-1aeb-4223-a04c-08a7f84c010f
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.control_manager
+  module:
+    - user
+id: user_remove_role_action.control_manager
+label: 'Remove the Control Manager role from the selected user(s)'
+type: user
+plugin: user_remove_role_action
+configuration:
+  rid: control_manager

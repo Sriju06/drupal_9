@@ -1,0 +1,22 @@
+uuid: 61a41628-1e61-4c94-9e46-734129e05c3e
+langcode: en
+status: true
+dependencies: {  }
+id: content_approver
+label: 'Content Approver'
+weight: 7
+is_admin: null
+permissions:
+  - 'access content overview'
+  - 'administer nodes'
+  - 'edit any test content'
+  - 'edit own test content'
+  - 'use editorial transition approved'
+  - 'use editorial transition archived_draft'
+  - 'use editorial transition archived_published'
+  - 'use editorial transition create_new_draft'
+  - 'use editorial transition publish'
+  - 'use editorial transition submit_draft'
+  - 'view any unpublished content'
+  - 'view latest version'
+  - 'view own unpublished content'

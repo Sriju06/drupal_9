@@ -11,9 +11,9 @@ id: node.test.field_date
 field_name: field_date
 entity_type: node
 bundle: test
-label: Date
+label: 'Expiry Date'
 description: ''
-required: false
+required: true
 translatable: false
 default_value: {  }
 default_value_callback: ''

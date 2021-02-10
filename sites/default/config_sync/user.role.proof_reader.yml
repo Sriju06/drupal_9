@@ -1,0 +1,26 @@
+uuid: 29a36795-e3cf-4735-958a-0080810b9d25
+langcode: en
+status: true
+dependencies: {  }
+id: proof_reader
+label: 'Proof Reader'
+weight: 9
+is_admin: null
+permissions:
+  - 'access content overview'
+  - 'administer nodes'
+  - 'create test content'
+  - 'delete own test content'
+  - 'edit any test content'
+  - 'edit own test content'
+  - 'revert test revisions'
+  - 'use editorial transition approved'
+  - 'use editorial transition archived_draft'
+  - 'use editorial transition archived_published'
+  - 'use editorial transition create_new_draft'
+  - 'use editorial transition publish'
+  - 'use editorial transition submit_draft'
+  - 'view any unpublished content'
+  - 'view latest version'
+  - 'view own unpublished content'
+  - 'view test revisions'

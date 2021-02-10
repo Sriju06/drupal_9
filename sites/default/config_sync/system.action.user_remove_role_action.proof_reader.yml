@@ -1,0 +1,14 @@
+uuid: b720c908-18a6-4e10-8ae2-3264ec618fcb
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.proof_reader
+  module:
+    - user
+id: user_remove_role_action.proof_reader
+label: 'Remove the Proof Reader role from the selected user(s)'
+type: user
+plugin: user_remove_role_action
+configuration:
+  rid: proof_reader

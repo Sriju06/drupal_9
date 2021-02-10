@@ -1,0 +1,23 @@
+uuid: 4b3f5391-eb9f-4b8c-b945-40f76bd1e910
+langcode: en
+status: true
+dependencies: {  }
+id: content_editor
+label: 'Content Editor'
+weight: 8
+is_admin: null
+permissions:
+  - 'access content overview'
+  - 'administer nodes'
+  - 'create test content'
+  - 'delete own test content'
+  - 'edit any test content'
+  - 'edit own test content'
+  - 'revert test revisions'
+  - 'use editorial transition create_new_draft'
+  - 'use editorial transition publish'
+  - 'use editorial transition submit_draft'
+  - 'view any unpublished content'
+  - 'view latest version'
+  - 'view own unpublished content'
+  - 'view test revisions'

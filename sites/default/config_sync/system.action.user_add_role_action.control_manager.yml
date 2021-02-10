@@ -1,0 +1,14 @@
+uuid: d952164a-1ec9-4651-b702-463af37fab56
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.control_manager
+  module:
+    - user
+id: user_add_role_action.control_manager
+label: 'Add the Control Manager role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: control_manager

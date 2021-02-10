@@ -7,6 +7,7 @@ label: 'Configuration Dev Split'
 description: ''
 folder: sites/default/config_dev
 module:
+  automated_cron: 0
   dblog: 0
 theme: {  }
 blacklist: {  }

@@ -1,0 +1,30 @@
+uuid: ac3d4155-c81c-45fe-b1b9-90d433ae4984
+langcode: en
+status: true
+dependencies: {  }
+id: site_owner
+label: 'Site Owner'
+weight: 4
+is_admin: null
+permissions:
+  - 'access content overview'
+  - 'administer nodes'
+  - 'create test content'
+  - 'delete any test content'
+  - 'delete own test content'
+  - 'delete test revisions'
+  - 'edit any test content'
+  - 'edit own comments'
+  - 'edit own test content'
+  - 'revert test revisions'
+  - 'use editorial transition approved'
+  - 'use editorial transition archive'
+  - 'use editorial transition archived_draft'
+  - 'use editorial transition archived_published'
+  - 'use editorial transition create_new_draft'
+  - 'use editorial transition publish'
+  - 'use editorial transition submit_draft'
+  - 'view any unpublished content'
+  - 'view latest version'
+  - 'view own unpublished content'
+  - 'view test revisions'
