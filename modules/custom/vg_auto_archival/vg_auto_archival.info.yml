@@ -1,0 +1,8 @@
+name: Vanguard Auto Archival
+type: module
+description: Cron schedular for auto state change to archive post expiry date.
+core_version_requirement: ^8.8 || ^9
+package: Content
+dependencies:
+  - drupal:content_moderation
+  - drupal:workflows
