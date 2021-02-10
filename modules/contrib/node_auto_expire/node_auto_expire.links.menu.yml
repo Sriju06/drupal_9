@@ -1,5 +1,0 @@
-node_auto_expire.admin:
-  title: 'Node Auto Expire'
-  description: 'Set node types that auto expire.'
-  parent: system.admin_config_content
-  route_name: node_auto_expire.config
