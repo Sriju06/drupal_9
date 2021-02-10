@@ -1,0 +1,7 @@
+vg_auto_archival.form:
+  path: '/vg_auto_archival'
+  defaults:
+    _form: '\Drupal\vg_auto_archival\Form\AutoArchivalForm'
+    _title: 'Vanguard Expired Content Auto Archival'
+  requirements:
+    _role: 'administrator'

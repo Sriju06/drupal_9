@@ -1,5 +1,4 @@
 module:
-  automated_cron: 0
   big_pipe: 0
   block: 0
   block_content: 0
@@ -11,8 +10,13 @@ module:
   config_filter: 0
   config_split: 0
   contact: 0
+  content_moderation: 0
   contextual: 0
+  csv_serialization: 0
   datetime: 0
+  devel: 0
+  devel_generate: 0
+  devel_php: 0
   dynamic_page_cache: 0
   editor: 0
   field: 0
@@ -32,7 +36,9 @@ module:
   path_alias: 0
   quickedit: 0
   rdf: 0
+  rest: 0
   search: 0
+  serialization: 0
   shortcut: 0
   system: 0
   taxonomy: 0
@@ -41,7 +47,10 @@ module:
   tour: 0
   update: 0
   user: 0
+  vg_auto_archival: 0
+  views_data_export: 0
   views_ui: 0
+  workflows: 0
   views: 10
   standard: 1000
 theme:
